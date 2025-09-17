@@ -112,7 +112,7 @@ $trend_words = array(
                 </h1>
                 
                 <!-- メイン検索フォーム -->
-                <form id="search-form" class="modern-search-form" role="search">
+                <form id="search-form" class="modern-search-form" role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>">
                     <!-- 隠しフィールド -->
                     <input type="hidden" id="search-nonce" value="<?php echo esc_attr($search_nonce); ?>">
                     <input type="hidden" id="ajax-url" value="<?php echo esc_url(admin_url('admin-ajax.php')); ?>">
@@ -122,11 +122,12 @@ $trend_words = array(
                             <input 
                                 type="text" 
                                 id="main-search-input" 
-                                name="keyword"
+                                name="s"
                                 class="search-field"
                                 placeholder="キーワードで検索"
                                 autocomplete="off"
                                 aria-label="検索キーワードを入力"
+                                value="<?php echo get_search_query(); ?>"
                             >
                             <button type="button" class="clear-btn" id="search-clear" style="display: none;">
                                 <i class="fas fa-times"></i>
@@ -1679,19 +1680,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // フォーム送信処理
     async function handleFormSubmit(event) {
-        event.preventDefault();
-        
-        if (searchSubmitBtn && searchSubmitBtn.disabled) return;
-        
         const searchData = collectFormData();
-        if (!validateSearchData(searchData)) return;
         
-        try {
-            await performSearch(searchData, 1);
-            addToSearchHistory(searchData);
-        } catch (error) {
-            console.error('検索エラー:', error);
-            showError('検索中にエラーが発生しました。');
+        // AJAX検索を試行、失敗した場合は通常のフォーム送信にフォールバック
+        if (CONFIG.nonce && searchData.search) {
+            event.preventDefault();
+            
+            if (searchSubmitBtn && searchSubmitBtn.disabled) return;
+            
+            if (!validateSearchData(searchData)) return;
+            
+            try {
+                await performSearch(searchData, 1);
+                addToSearchHistory(searchData);
+            } catch (error) {
+                console.error('AJAX検索エラー:', error);
+                // フォールバック: 通常のWordPress検索へリダイレクト
+                const searchUrl = new URL(window.location.origin);
+                searchUrl.searchParams.set('s', searchData.search);
+                window.location.href = searchUrl.toString();
+            }
+        } else {
+            // AJAX機能が利用できない場合は通常のフォーム送信
+            // event.preventDefault() を呼ばずに通常のフォーム送信を実行
         }
     }
 

@@ -10,7 +10,15 @@
  * @package Grant_Insight_V4
  */
 
-get_header(); ?>
+get_header(); 
+
+// 検索結果の場合は search.php にリダイレクト
+if (is_search()) {
+    get_template_part('search');
+    get_footer();
+    return;
+}
+?>
 
 <!-- Tailwind CSS Play CDNの読み込み（ページのhead部分に配置） -->
 <?php if (!wp_script_is('tailwind-cdn', 'enqueued')): ?>

@@ -93,6 +93,42 @@ function gi_setup() {
 add_action('after_setup_theme', 'gi_setup');
 
 /**
+ * 検索にカスタム投稿タイプを含める
+ */
+function gi_include_custom_post_types_in_search($query) {
+    if (!is_admin() && $query->is_main_query()) {
+        if ($query->is_search()) {
+            $query->set('post_type', array('post', 'grant', 'tool', 'case_study', 'guide', 'grant_tip'));
+        }
+    }
+}
+add_action('pre_get_posts', 'gi_include_custom_post_types_in_search');
+
+/**
+ * 検索結果でカスタムフィールドも検索対象に含める
+ */
+function gi_extend_search_to_custom_fields($search, $wp_query) {
+    global $wpdb;
+
+    if (!is_search()) return $search;
+    
+    if (empty($search)) return $search;
+
+    // カスタムフィールドも検索対象に追加
+    $search_term = $wp_query->query_vars['s'];
+    if (!empty($search_term)) {
+        $search .= " OR EXISTS (
+            SELECT 1 FROM {$wpdb->postmeta} 
+            WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID 
+            AND {$wpdb->postmeta}.meta_value LIKE '%{$search_term}%'
+        )";
+    }
+    
+    return $search;
+}
+add_filter('posts_search', 'gi_extend_search_to_custom_fields', 500, 2);
+
+/**
  * コンテンツ幅設定
  */
 function gi_content_width() {

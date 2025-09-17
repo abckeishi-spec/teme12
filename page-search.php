@@ -144,7 +144,7 @@ get_header(); ?>
                                     <option value="">すべての都道府県</option>
                                     <?php
                                     $prefectures = get_terms([
-                                        'taxonomy' => 'prefecture',
+                                        'taxonomy' => 'grant_prefecture',
                                         'hide_empty' => false,
                                         'orderby' => 'name',
                                         'order' => 'ASC',
